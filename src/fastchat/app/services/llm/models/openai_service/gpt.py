@@ -250,3 +250,38 @@ class GPT(LLM):
         # Se agrega la respuesta a la historia
         self.chat_history[-1].append({"role": "assistant", "content": response})
         return response
+
+    async def close(self) -> None:
+        """
+        Closes and cleans up all GPT resources including OpenAI clients and chat history.
+        
+        This method performs the following cleanup operations:
+        - Closes the async OpenAI client if present
+        - Closes the sync OpenAI client if present  
+        - Clears the chat history to free memory
+        - Nullifies client references to prevent memory leaks
+        
+        Called by the parent Fastchat cleanup process to ensure proper resource management.
+        """
+        try:
+            # Close async OpenAI client
+            if hasattr(self, 'async_client') and self.async_client is not None:
+                await self.async_client.close()
+                self.async_client = None
+
+            # Close sync OpenAI client
+            if hasattr(self, 'client') and self.client is not None:
+                # Sync client doesn't have async close method, so we just nullify
+                self.client = None
+
+            # Clear chat history to free memory
+            if hasattr(self, 'chat_history'):
+                self.chat_history.clear()
+
+            # Clear client manager reference
+            if hasattr(self, 'client_manager_mcp'):
+                self.client_manager_mcp = None
+
+        except Exception as e:
+            logger.error(f"Error during GPT cleanup: {e}")
+            raise

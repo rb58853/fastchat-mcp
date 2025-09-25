@@ -10,12 +10,20 @@ class ClientManagerMCP:
     ClientManagerMCP is responsible for managing and interacting with tools, resources, and prompts
     provided by multiple MCP (Multi-Component Platform) servers. It handles the initialization,
     refreshing, and retrieval of these components, as well as facilitating their invocation.
+    
+    CLEANUP IMPLEMENTATION CHANGES:
+    - Added close() method to properly shutdown all MCP server connections
+    - Added context manager support (__aenter__, __aexit__) for automatic cleanup
+    - Implemented __close_all_sessions() to handle both HTTP and stdio session cleanup
+    - Clear all cached data (tools, resources, prompts) on close to prevent memory leaks
+    
     Attributes:
         app_name (str): The name of the application using the manager.
         tools (dict[str, Tool]): Dictionary of available tools, keyed by server and tool name.
         resources (dict[str, Resource]): Dictionary of available resources, keyed by server and resource name.
         prompts (dict[str, Prompt]): Dictionary of available prompts, keyed by server and prompt name.
     ## Methods
+        close(): NEW - Properly close all MCP server connections and cleanup resources
         call_tool(name: str, args: dict) -> str | None:
             Calls a tool by name with the provided arguments.
         read_resource(name: str, args: dict) -> str | None:
@@ -44,9 +52,9 @@ class ClientManagerMCP:
         aditional_servers: dict = {},
         print_logo: bool = True,
     ):
-        self.tools: dict[str:Tool] | None = {}
-        self.resources: dict[str:Resource] | None = {}
-        self.prompts: dict[str:Prompt] | None = {}
+        self.tools: dict[str, Tool] | None = {}
+        self.resources: dict[str, Resource] | None = {}
+        self.prompts: dict[str, Prompt] | None = {}
 
         self.__services: list[dict] = []
         """List of services as strings to be passed to the LLM"""
@@ -58,6 +66,11 @@ class ClientManagerMCP:
 
     async def initialize(self) -> None:
         await self.refresh_data()
+
+    async def refresh_data(self) -> None:
+        """Initialize or refresh the lists of tools, resources, and prompts from all registered MCP servers."""
+        # This method should be implemented to populate tools, resources, and prompts
+        pass
         ClientManagerMCP.INSTANCE = self
 
     # region SINGLETON
@@ -70,6 +83,103 @@ class ClientManagerMCP:
     #         self.resources = ClientManagerMCP.INSTANCE.resources
     #         self.prompts = ClientManagerMCP.INSTANCE.prompts
     # endregion
+
+    
+    async def close(self) -> None:
+        """
+        Properly close all MCP server connections and cleanup resources.
+        
+        NEW METHOD ADDED FOR CLEANUP IMPLEMENTATION:
+        This method ensures all active MCP sessions are properly terminated
+        and all cached data is cleared to prevent memory leaks.
+        
+        What it does:
+        1. Closes all HTTP stream sessions (WebSocket/HTTP connections)
+        2. Closes all stdio sessions (subprocess connections)  
+        3. Clears all cached tools, resources, and prompts
+        4. Clears internal service and prompt context lists
+        5. Resets singleton instance to None
+        """
+        # Close all active sessions with MCP servers
+        await self.__close_all_sessions()
+        
+        # Clear all cached data to prevent memory leaks
+        self.tools.clear() if self.tools else None
+        self.resources.clear() if self.resources else None
+        self.prompts.clear() if self.prompts else None
+        
+        # Clear internal service caches
+        self.__services.clear()
+        self.__prompts_context.clear()
+        
+        # Clear singleton instance reference
+        ClientManagerMCP.INSTANCE = None
+        
+        logger.info("ClientManagerMCP closed successfully")
+
+    async def __close_all_sessions(self) -> None:
+        """
+        Close all active sessions with MCP servers.
+        
+        NEW METHOD ADDED FOR CLEANUP IMPLEMENTATION:
+        This method iterates through all configured MCP servers and calls
+        the appropriate close_session function based on the protocol type.
+        
+        Handles two types of MCP connections:
+        1. httpstream - HTTP/WebSocket connections 
+        2. stdio - Subprocess connections
+        """
+        mcp_servers: dict[str, dict] = Servers(aditional_servers=self.aditional_servers).mcp_servers or {}
+        
+        for server_key in mcp_servers.keys():
+            server = {"key": server_key} | mcp_servers[server_key]
+            
+            try:
+                if server["protocol"] == "httpstream":
+                    # Close HTTP/WebSocket session
+                    await httpstrem.close_session(server)
+                elif server["protocol"] == "stdio":
+                    # Close subprocess session
+                    await stdio.close_session(server)
+                    
+                logger.info(
+                    f"Closed connection with server {CustomFormatter.green}{server_key}{CustomFormatter.reset}"
+                )
+            except Exception as e:
+                logger.error(
+                    f"Error closing connection with server {CustomFormatter.bold_red}{server_key}{CustomFormatter.reset}: {e}"
+                )
+
+    async def __aenter__(self):
+        """
+        Context manager entry point.
+        
+        NEW METHOD ADDED FOR CLEANUP IMPLEMENTATION:
+        Enables async context manager support for automatic resource management.
+        When entering an 'async with' block, this method initializes the 
+        ClientManagerMCP instance.
+        
+        Returns:
+            self: The initialized ClientManagerMCP instance
+        """
+        await self.initialize()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """
+        Context manager exit point.
+        
+        NEW METHOD ADDED FOR CLEANUP IMPLEMENTATION:
+        Enables async context manager support for automatic resource management.
+        When exiting an 'async with' block, this method automatically calls
+        close() to ensure proper cleanup, even if an exception occurs.
+        
+        Args:
+            exc_type: Exception type (if any)
+            exc_val: Exception value (if any)
+            exc_tb: Exception traceback (if any)
+        """
+        await self.close()
 
     async def call_tool(self, name: str, args: dict) -> str | None:
         return await self.tools[name](args)

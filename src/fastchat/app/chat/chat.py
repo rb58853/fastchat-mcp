@@ -75,7 +75,7 @@ class Fastchat:
             model=model,
             chat_history=history + loaded_history,
         )
-        self.client_manager_mcp: ClientManagerMCP | None = None
+        self.client_manager_mcp: ClientManagerMCP | None = None  # MCP client manager for handling server connections
         self.extra_reponse_system_prompts: list[dict[str, str]] = [
             {
                 "role": "system",
@@ -94,6 +94,66 @@ class Fastchat:
 
         self.current_messages_set: MessagesSet | None = None
 
+    async def close(self) -> None:
+        """
+        Properly cleanup and close the Fastchat instance.
+        
+        This method ensures all active connections and resources are properly closed
+        to prevent memory leaks and hanging connections. It should be called when 
+        the chat session is no longer needed.
+        
+        Changes made for cleanup implementation:
+        - Added proper MCP client manager cleanup
+        - Clear all reference collections to help garbage collection
+        - Set client manager to None to prevent further usage
+        """
+        # Close MCP client manager and all its connections
+        # This will close all HTTP/WebSocket connections and stdio processes
+        if self.client_manager_mcp is not None:
+            await self.client_manager_mcp.close()  # Closes all MCP server connections
+            self.client_manager_mcp = None  # Prevent further usage
+
+        # Close LLM client (if tiene método close)
+        if hasattr(self.llm, 'close') and callable(getattr(self.llm, 'close')):
+            await self.llm.close()
+        
+        # Clear references to help garbage collection
+        # These collections might hold references to large objects
+        self.current_messages_set = None
+        self.extra_reponse_system_prompts.clear()
+        self.extra_selection_system_prompts.clear()
+        self.aditional_servers.clear()
+
+    async def __aenter__(self):
+        """
+        Context manager entry point.
+        
+        This method is part of the async context manager protocol implementation.
+        It automatically initializes the Fastchat instance when entering a 
+        'async with' block, ensuring proper setup.
+        
+        Returns:
+            self: The initialized Fastchat instance
+        """
+        await self.initialize()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """
+        Context manager exit point.
+        
+        This method is part of the async context manager protocol implementation.
+        It automatically calls close() when exiting an 'async with' block,
+        ensuring proper cleanup even if an exception occurs.
+        
+        Args:
+            exc_type: Exception type (if any)
+            exc_val: Exception value (if any) 
+            exc_tb: Exception traceback (if any)
+        """
+        await self.close()
+
+    
     async def initialize(self, print_logo: bool = True) -> None:
         await self.__set_client_manager_mcp(print_logo=print_logo)
 
