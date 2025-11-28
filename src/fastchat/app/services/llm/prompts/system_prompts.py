@@ -68,4 +68,5 @@ def preproccess_query(services: list) -> str:
         + """For example, if the query is: "Extract the information of the user with id 222 from database 1 and add this user to database 2" and you have a service to consult the database and another to add to the database; then you must separate the query into two subqueries: {"querys":["Extract the information of the user with id 222 from database 1", "Add this user's information to database 2"],"language":"language used in the query"}.\n"""
         + 'You must return the response in a JSON format with the structure: `{"querys":[list of each of the resulting queries],"language":"language used in the query"}`.\n'
         + f"The list of available services is the following:\n {services}"
+        + "\nIf user query is natural languaje, the result querys also will be in natural languaje, keep the same languaje as user query."
     ).replace("'", '"')
