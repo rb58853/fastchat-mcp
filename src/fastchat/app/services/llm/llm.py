@@ -43,6 +43,11 @@ class LLM(ABC):
         final_response(query: str, data: str | dict, extra_messages: list[dict[str, str]] = []) -> Generator[str, None]:
             Generates the final response to the user based on the original query and any
             additional data or context. Returns a generator that yields the response in chunks.
+
+        close() -> None:
+            Cleanup method for releasing LLM-specific resources such as API clients,
+            connection pools, or cached data. Should be called when the LLM instance
+            is no longer needed.
     """
 
     def __init__(self):
@@ -135,5 +140,24 @@ class LLM(ABC):
             extra_messages (list[dict[str, str]], optional): Additional messages to include in the response context. Defaults to an empty list.
         Yields:
             str: The generated response string(s), yielded one at a time.
+        """
+        pass
+
+    @abstractmethod
+    async def close(self) -> None:
+        """
+        Cleanup method for releasing LLM-specific resources.
+        
+        CLEANUP IMPLEMENTATION METHOD:
+        This method should be implemented by each LLM subclass to properly
+        clean up any resources specific to that LLM implementation such as:
+        - API client connections
+        - Connection pools
+        - Cached data structures
+        - Thread pools or async tasks
+        - Authentication tokens
+        
+        Should be called when the LLM instance is no longer needed to prevent
+        resource leaks and ensure proper cleanup.
         """
         pass

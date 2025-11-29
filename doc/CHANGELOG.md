@@ -2,7 +2,9 @@
 
 ## fastchat-mcp
 
-### v1.1.3 📡 
+### v1.2.0 🧹
+
+### v1.1.3 📡
 
 - ✅ Full **WebSocket integration** with authentication, middleware, and security.  
 - 🔑 Integration with an **external API** to generate, store, and load tokens connected to a database.  

@@ -1,6 +1,7 @@
 # Environment
 .env
 /fastchat.config.json
+.fastauth.config.json
 
 # Cache
 *.cpython-313.pyc
@@ -13,7 +14,6 @@ dist/*
 #Text Editor
 .vscode/*
 
-
 #Chats
 chats
 
@@ -24,3 +24,9 @@ data
 src/api_dev.py
 src/terminal_dev.py
 xbuild.md
+
+#Testing files 
+examples/basic_cleanup_test.py 
+examples/simple_cleanup_test.py 
+examples/cleanup_demo.py 
+examples/complete_cleanup_test.py

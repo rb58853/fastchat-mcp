@@ -96,12 +96,22 @@ on_text_received(text):
 
 *Purpose:* Supply the external auth service used by the API to validate tokens for protected chat routes (`/chat/user`, `/chat/admin`).
 
+```json
+{
+    "...": "...",
+    
+    "auth_middleware": {
+        "database_api_path": "http://127.0.0.1:6789/mydb/data",
+        "headers": {
+            "header_key": "header_value",
+            "other_header": "header_value",
+            "...": "..."
+        }
+    }
+}
+```
+
 ### *Required fields*
 
 - `database_api_path` (string): full URL to the authentication/validation endpoint (prefer HTTPS). This is where Fastauth will query/validate tokens.
 - `headers` (object): key/value HTTP headers to include on requests to the auth endpoint (e.g. `Authorization`, API keys). Use environment values for secrets.
-
-### *Notes & best practices*
-
-- The endpoint must return a clear success/failure response that your [Fastauth](https://github.com/rb58853/fastauth-api) integration expects (HTTP 200 for valid).
-- Ensure network accessibility from the app to `database_api_path` and use TLS for production.
