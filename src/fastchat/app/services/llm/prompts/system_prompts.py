@@ -1,3 +1,7 @@
+import yaml
+from pathlib import Path
+
+
 def language_prompt(language: str) -> str:
     return f"\nAlways respond in the language: {language}"
 
@@ -63,10 +67,15 @@ Correctly select and extract both the prompt_services and the arguments from the
 
 
 def preproccess_query(services: list) -> str:
-    return (
-        """You are an expert in task comprehension and ordering of the same. Your mission is, given a user's query, to separate it into several independent queries if necessary. If the query doesn't need to be separated into more than one task then you must return a list of size 1 with exactly the same user's query. It's important that you separate them in the correct order of execution according to their dependencies on each other. The condition for separating queries is given by a list of available services, if it's necessary to use more than one service then you must separate the query. Also you must extract the language used  in the query, it can be any language.\n"""
-        + """For example, if the query is: "Extract the information of the user with id 222 from database 1 and add this user to database 2" and you have a service to consult the database and another to add to the database; then you must separate the query into two subqueries: {"querys":["Extract the information of the user with id 222 from database 1", "Add this user's information to database 2"],"language":"language used in the query"}.\n"""
-        + 'You must return the response in a JSON format with the structure: `{"querys":[list of each of the resulting queries],"language":"language used in the query"}`.\n'
-        + f"The list of available services is the following:\n {services}"
-        + "\nIf user query is natural languaje, the result querys also will be in natural languaje, keep the same languaje as user query."
-    ).replace("'", '"')
+    yaml_file = Path(__file__).parent / "texts" / "system_prompts.yaml"
+    with open(yaml_file) as f:
+        system_prompts = yaml.safe_load(f)
+        return system_prompts["task_query_decomposer"].replace("{services}", str(services))
+        
+    # return (
+    #     """You are an expert in task comprehension and ordering of the same. Your mission is, given a user's query, to separate it into several independent queries if necessary. If the query doesn't need to be separated into more than one task then you must return a list of size 1 with exactly the same user's query. It's important that you separate them in the correct order of execution according to their dependencies on each other. The condition for separating queries is given by a list of available services, if it's necessary to use more than one service then you must separate the query. Also you must extract the language used  in the query, it can be any language.\n"""
+    #     + "\nBe sure to use a language consistent with the query you are analyzing. If the query is expressed in natural language, you must keep the subqueries in natural language; for example: you cannot split a natural-language query into technically worded subqueries."  # NEW
+    #     + """For example, if the query is: "Extract the information of the user with id 222 from database 1 and add this user to database 2" and you have a service to consult the database and another to add to the database; then you must separate the query into two subqueries: {"querys":["Extract the information of the user with id 222 from database 1", "Add this user's information to database 2"],"language":"language used in the query"}.\n"""
+    #     + 'You must return the response in a JSON format with the structure: `{"querys":[list of each of the resulting queries],"language":"language used in the query"}`.\n'
+    #     + f"The list of available services is the following:\n {services}"
+    # ).replace("'", '"')

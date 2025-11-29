@@ -48,7 +48,7 @@ class TerminalChat:
         chat: Fastchat = Fastchat(
             model=self.model,
             extra_reponse_system_prompts=self.extra_reponse_system_prompts,
-            extra_selection_system_prompts=self.extra_reponse_system_prompts,
+            extra_selection_system_prompts=self.extra_selection_system_prompts,
             aditional_servers=self.aditional_servers,
             len_context=self.len_context,
         )

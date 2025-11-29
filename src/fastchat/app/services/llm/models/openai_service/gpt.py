@@ -164,6 +164,8 @@ class GPT(LLM):
     def select_prompts(self, query: str, extra_messages: list[dict[str, str]]) -> str:
         system_message: str = system_prompts.select_prompts
         prompts = self.client_manager_mcp.get_prompts()
+        if prompts is None or len(prompts) == 0:
+            return json.dumps({"prompt_services": []})
 
         extra_messages: list[dict[str, str]] = extra_messages + [
             {
@@ -186,8 +188,10 @@ class GPT(LLM):
     ) -> str:
         system_message: str = system_prompts.select_service
         services = self.client_manager_mcp.get_services()
-        query: str = user_prompts.query_and_services(query=query, services=services)
+        if services is None or len(services) == 0:
+            return json.dumps({"service": "", "args": {}})
 
+        query: str = user_prompts.query_and_services(query=query, services=services)
         return self.__call_completion(
             system_message=system_message,
             query=query,
@@ -254,32 +258,32 @@ class GPT(LLM):
     async def close(self) -> None:
         """
         Closes and cleans up all GPT resources including OpenAI clients and chat history.
-        
+
         This method performs the following cleanup operations:
         - Closes the async OpenAI client if present
-        - Closes the sync OpenAI client if present  
+        - Closes the sync OpenAI client if present
         - Clears the chat history to free memory
         - Nullifies client references to prevent memory leaks
-        
+
         Called by the parent Fastchat cleanup process to ensure proper resource management.
         """
         try:
             # Close async OpenAI client
-            if hasattr(self, 'async_client') and self.async_client is not None:
+            if hasattr(self, "async_client") and self.async_client is not None:
                 await self.async_client.close()
                 self.async_client = None
 
             # Close sync OpenAI client
-            if hasattr(self, 'client') and self.client is not None:
+            if hasattr(self, "client") and self.client is not None:
                 # Sync client doesn't have async close method, so we just nullify
                 self.client = None
 
             # Clear chat history to free memory
-            if hasattr(self, 'chat_history'):
+            if hasattr(self, "chat_history"):
                 self.chat_history.clear()
 
             # Clear client manager reference
-            if hasattr(self, 'client_manager_mcp'):
+            if hasattr(self, "client_manager_mcp"):
                 self.client_manager_mcp = None
 
         except Exception as e:
