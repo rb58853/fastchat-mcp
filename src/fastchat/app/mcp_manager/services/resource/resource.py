@@ -22,7 +22,7 @@ class Resource(Service):
         self.args = [{"name": arg, "type": "string"} for arg in self.args]
 
     async def __call__(self, args: dict[str, any]):
-        return self.read(args)
+        return await self.read(args)
 
     async def read(self, args: dict[str, str]):
         uri = self.data.uriTemplate
