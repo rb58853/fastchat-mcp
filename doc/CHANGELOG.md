@@ -2,7 +2,17 @@
 
 ## fastchat-mcp
 
+### v1.2.1 📝
+
+- 🚀 Improvement of the prompt engine in system prompts  
+- 🛠️ Fixing minor issues (await in resource & extra_selection_prompts in `TerminalChat`)
+
 ### v1.2.0 🧹
+
+- **🔧 Client Cleanup**: `FastChatMCPClient.cleanup()` method for proper MCP connection termination
+- **🧠 LLM Cleanup**: `LLMManager.cleanup()` for model and tokenizer memory release
+- **📦 Context Manager Support**: Automatic cleanup using `async with` statements
+- **🛡️ Resource Safety**: Prevents memory leaks in long-running applications
 
 ### v1.1.3 📡
 
