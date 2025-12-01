@@ -4,9 +4,11 @@ import importlib.resources
 # from pathlib import Path
 # yaml_file = Path(__file__).parent / "texts" / "system_prompts.yaml"
 # with open(yaml_file) as f:
-    # system_prompts: dict = yaml.safe_load(f)
+# system_prompts: dict = yaml.safe_load(f)
 
-with importlib.resources.open_text('fastchat.app.services.llm.prompts.texts', 'system_prompts.yaml') as f:
+with importlib.resources.open_text(
+    "fastchat.app.services.llm.prompts.texts", "system_prompts.yaml"
+) as f:
     system_prompts: dict = yaml.safe_load(f)
 
 
@@ -81,7 +83,7 @@ Correctly select and extract both the prompt_services and the arguments from the
 
 
 def preproccess_query(services: list) -> str:
-    return system_prompts["task_query_decomposer"].replace("{services}", str(services))
+    return f'{system_prompts["task_query_decomposer"]}"\n"{services})'
 
     # return (
     #     """You are an expert in task comprehension and ordering of the same. Your mission is, given a user's query, to separate it into several independent queries if necessary. If the query doesn't need to be separated into more than one task then you must return a list of size 1 with exactly the same user's query. It's important that you separate them in the correct order of execution according to their dependencies on each other. The condition for separating queries is given by a list of available services, if it's necessary to use more than one service then you must separate the query. Also you must extract the language used  in the query, it can be any language.\n"""

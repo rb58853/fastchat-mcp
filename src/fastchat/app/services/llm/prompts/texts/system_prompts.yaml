@@ -75,7 +75,6 @@ task_query_decomposer: |
   - Only split when more than one service is needed or when there are implicit intermediate steps that depend on different services; otherwise keep the query as a single element in the list.
 
   The list of available services is the following:
-  {services}
 
 chat_assistant_prompt: |
   You are an advanced conversational assistant whose main function is to interact with end users and respond exclusively based on their query and the information available in the system context. 

@@ -156,6 +156,7 @@ class GPT(LLM):
             model=self.model,
             messages=messages,
             response_format={"type": "json_object"},
+            # reasoning_effort="low",  # Fast >>> Reasoning
         )
         self.__get_price(completion.usage)
         response = completion.choices[0].message.content

@@ -75,6 +75,7 @@
     },
     "auth_middleware": {
         "database_api_path": "http://127.0.0.1:6789/mydb/data",
+        "master-token": "<YOUR_MASTER_TOKEN_HERE>",
         "headers": {
             "header_key": "header_value",
             "other_header": "header_value",

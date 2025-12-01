@@ -39,7 +39,11 @@ class WebsocketClient:
         }
 
         async with websockets.connect(
-            uri, additional_headers=headers, ping_interval=0
+            uri,
+            additional_headers=headers,
+            ping_interval=100,  # Envía ping cada 100s (aumenta si servidor es muy lento)
+            ping_timeout=200,  # Espera hasta 200s por pong (ajusta según latencia máxima)
+            close_timeout=10,
         ) as websocket:
             connection = await websocket.recv()
             connection = json.loads(connection)
@@ -82,6 +86,6 @@ def step2terminal(step: dict, index: int) -> int:
 
 
 if __name__ == "__main__":
-    uri_ws = "ws://localhost:8000/chat/user?chat_id=id" 
-    uri_ws = "ws://localhost:8000/chat/admin?chat_id=id" 
+    # uri_ws = "ws://localhost:8000/chat/user?chat_id=id"
+    uri_ws = "ws://localhost:8000/chat/admin?chat_id=id"
     WebsocketClient().open_chat(uri_ws)

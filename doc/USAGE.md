@@ -71,12 +71,12 @@ For applications requiring real-time communication or frontend integration, Fast
 
 ```python
 # my_api.py
-from fastchat.api import Fastapp
+from fastchat import FastApp
 
-fastapp = Fastapp(
+fastapp = FastApp(
     extra_reponse_system_prompts=[],
     extra_selection_system_prompts=[],
-    len_context=ConfigLLM.DEFAULT_HISTORY_LEN,
+    len_context=20,
 )
 
 app = fastapp.app

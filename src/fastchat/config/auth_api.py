@@ -13,5 +13,7 @@ class AuthApiConfig:
                 auth_config: dict = config.get("auth_middleware", {})
                 self.auth_settings = FastauthSettings(
                     database_api_path=auth_config.get("database_api_path"),
+                    master_token=auth_config.get("master-token", None)
+                    or os.getenv("MASTER_TOKEN", None),
                     headers=auth_config.get("headers", {}),
                 )

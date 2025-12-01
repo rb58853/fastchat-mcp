@@ -91,10 +91,10 @@ async def websocket_chat(
         while True:
             # Espera mensaje del usuario, típicamente texto (puedes cambiarlo si envías JSON)
             query = await websocket.receive_text()
-            response = chat(query)
+            # response = chat(query)
 
             # Enviar respuesta al cliente (puede ser texto o JSON)
-            async for step in response:
+            async for step in chat(query):
                 await websocket.send_json(step.json)
             await websocket.send_text(STREAM_END_MARKER)
 
