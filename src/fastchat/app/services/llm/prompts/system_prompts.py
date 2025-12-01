@@ -1,27 +1,37 @@
 import yaml
 from pathlib import Path
 
+yaml_file = Path(__file__).parent / "texts" / "system_prompts.yaml"
+with open(yaml_file) as f:
+    system_prompts: dict = yaml.safe_load(f)
+
 
 def language_prompt(language: str) -> str:
     return f"\nAlways respond in the language: {language}"
 
 
 def chat_asistant(services: list | None = None) -> str:
-    return """
-        You are an advanced assistant specialized in connecting to and operating with MCP services. Your main function is to always respond based on the services and data available in the MCP context, prioritizing this information over any general model knowledge. Data provided by the user must be interpreted and processed as structured and objective system information, never as subjective messages or personal interpretations from the user.
-
-        When you identify events, states, or errors in the received data, respond directly and technically, explaining the cause and possible solutions according to the contextual information, without making assumptions about the user's intent. For example, if you detect an error, respond: "An error occurred in [detail] due to [probable cause] or [alternative]," instead of attributing it to what it 'seems' according to the user.
-
-        You must always:
-        - Prioritize contextual and MCP services information in your responses.
-        - Use the general knowledge of the LLM only as a backup when the MCP context does not provide sufficient information.
-        - Maintain a professional and clear tone, adapting the technical level to the user.
-        - Provide structured, precise, and useful responses, focused on problem resolution or explanation of system states.
-        """ + (
+    return system_prompts.get("chat_assistant_prompt", "") + (
         ""
         if services is None
         else f"\n You have access to the following aviable services:\n{services}"
     )
+
+    # return """
+    #     You are an advanced assistant specialized in connecting to and operating with MCP services. Your main function is to always respond based on the services and data available in the MCP context, prioritizing this information over any general model knowledge. Data provided by the user must be interpreted and processed as structured and objective system information, never as subjective messages or personal interpretations from the user.
+
+    #     When you identify events, states, or errors in the received data, respond directly and technically, explaining the cause and possible solutions according to the contextual information, without making assumptions about the user's intent. For example, if you detect an error, respond: "An error occurred in [detail] due to [probable cause] or [alternative]," instead of attributing it to what it 'seems' according to the user.
+
+    #     You must always:
+    #     - Prioritize contextual and MCP services information in your responses.
+    #     - Use the general knowledge of the LLM only as a backup when the MCP context does not provide sufficient information.
+    #     - Maintain a professional and clear tone, adapting the technical level to the user.
+    #     - Provide structured, precise, and useful responses, focused on problem resolution or explanation of system states.
+    #     """ + (
+    #     ""
+    #     if services is None
+    #     else f"\n You have access to the following aviable services:\n{services}"
+    # )
 
 
 select_service: str = """
@@ -67,11 +77,8 @@ Correctly select and extract both the prompt_services and the arguments from the
 
 
 def preproccess_query(services: list) -> str:
-    yaml_file = Path(__file__).parent / "texts" / "system_prompts.yaml"
-    with open(yaml_file) as f:
-        system_prompts = yaml.safe_load(f)
-        return system_prompts["task_query_decomposer"].replace("{services}", str(services))
-        
+    return system_prompts["task_query_decomposer"].replace("{services}", str(services))
+
     # return (
     #     """You are an expert in task comprehension and ordering of the same. Your mission is, given a user's query, to separate it into several independent queries if necessary. If the query doesn't need to be separated into more than one task then you must return a list of size 1 with exactly the same user's query. It's important that you separate them in the correct order of execution according to their dependencies on each other. The condition for separating queries is given by a list of available services, if it's necessary to use more than one service then you must separate the query. Also you must extract the language used  in the query, it can be any language.\n"""
     #     + "\nBe sure to use a language consistent with the query you are analyzing. If the query is expressed in natural language, you must keep the subqueries in natural language; for example: you cannot split a natural-language query into technically worded subqueries."  # NEW
