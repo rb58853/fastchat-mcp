@@ -42,7 +42,7 @@ class WebsocketClient:
             uri,
             additional_headers=headers,
             ping_interval=100,  # Envía ping cada 100s (aumenta si servidor es muy lento)
-            ping_timeout=200,  # Espera hasta 200s por pong (ajusta según latencia máxima)
+            ping_timeout=1200,  # Espera hasta 1200s por pong (ajusta según latencia máxima)
             close_timeout=10,
         ) as websocket:
             connection = await websocket.recv()
