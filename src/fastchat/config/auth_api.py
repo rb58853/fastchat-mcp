@@ -17,3 +17,10 @@ class AuthApiConfig:
                     or os.getenv("MASTER_TOKEN", None),
                     headers=auth_config.get("headers", {}),
                 )
+                
+    def new_override(self,_settings:dict):
+        settings = self.auth_settings.dict()
+        settings.update(_settings)
+        return settings
+        
+                    

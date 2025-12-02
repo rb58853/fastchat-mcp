@@ -71,6 +71,10 @@ For applications requiring real-time communication or frontend integration, Fast
 
 ```python
 # my_api.py
+import dotenv
+
+dotenv.load_dotenv()
+
 from fastchat import FastApp
 
 fastapp = FastApp(

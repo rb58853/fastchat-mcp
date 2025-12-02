@@ -2,7 +2,12 @@
 
 ## fastchat-mcp
 
-### v1.2.1 📝
+### v1.2.5 🚀
+
+- 🚀 Improvement of the prompt engine in system prompts  
+- 🛠️ Fix Fastauth-integration
+
+### v1.2.4 📝
 
 - 🚀 Improvement of the prompt engine in system prompts  
 - 🛠️ Fixing minor issues (await in resource & extra_selection_prompts in `TerminalChat`)

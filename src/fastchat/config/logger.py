@@ -29,19 +29,19 @@ class CustomFormatter(logging.Formatter):
 
 
 def setup_logger() -> logging.Logger:
-    """Configure logging for the MCP client with log rotation."""
-    logger = logging.getLogger("client-mcp")
+    """Configure logging."""
+    logger = logging.getLogger("fastchat-mcp")
 
     # Remove existing handlers to avoid duplicate logs
     if logger.hasHandlers():
         logger.handlers.clear()
 
     # Define a consistent log directory in the user's home folder
-    log_dir = Path.home() / ".local" / "share" / "fastchat-mcp"
+    log_dir = Path.home() / ".local" / "share" / "fastchat-mcp" / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
 
     # Define the log file path
-    log_file = log_dir / "mcp_client.log"
+    log_file = log_dir / "main.log"
 
     # Create a rotating file handler
     # - Rotate when log reaches 5MB

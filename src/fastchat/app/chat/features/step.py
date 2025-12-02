@@ -8,17 +8,17 @@ class StepMessage(Enum):
     """
 
     ANALYZE_QUERY = (
-        "analyze query",
+        "Task query decomposer",
         "Analyze the user query and available services to separate it into service-specific calls.",
     )
 
     SELECT_SERVICE = (
-        "select service",
+        "Select service",
         "Select the most appropriate service for the current query.",
     )
 
     SELECT_PROMPTS = (
-        "select prompts",
+        "Select prompts",
         "Select the mosts appropriates prompts for the current query and generate the necessary arguments for use with the selected prompts",
     )
 
