@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fastchat-mcp"
-version = "1.2.5"
+version = "1.2.6"
 authors = [{ name = "Raúl Beltrán Gómez", email = "rb58853@gmail.com" }]
 description = "Python client, based on fastmcp, for connecting to MCP servers through multiple protocols, specifically designed to work with integrated language models."
 readme = "README.md"
@@ -24,6 +24,7 @@ dependencies = [
   "websockets",
   "requests",
   "PyYAML",
+  "aiohttp"
 ]
 
 [project.urls]
