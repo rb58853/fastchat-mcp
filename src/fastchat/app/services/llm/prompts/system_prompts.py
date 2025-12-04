@@ -1,15 +1,15 @@
 import yaml
 import importlib.resources
 
-# from pathlib import Path
-# yaml_file = Path(__file__).parent / "texts" / "system_prompts.yaml"
-# with open(yaml_file) as f:
-# system_prompts: dict = yaml.safe_load(f)
-
-with importlib.resources.open_text(
-    "fastchat.app.services.llm.prompts.texts", "system_prompts.yaml"
-) as f:
+from pathlib import Path
+yaml_file = Path(__file__).parent / "texts" / "system_prompts.yaml"
+with open(yaml_file) as f:
     system_prompts: dict = yaml.safe_load(f)
+
+# with importlib.resources.open_text(
+#     "fastchat.app.services.llm.prompts.texts", "system_prompts.yaml"
+# ) as f:
+#     system_prompts: dict = yaml.safe_load(f)
 
 select_service: str = system_prompts.get("select_service", "")
 select_prompts: str = system_prompts.get("select_prompts", "")
