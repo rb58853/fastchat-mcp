@@ -17,7 +17,7 @@ license = "MIT"
 license-files = ["LICENSE*"]
 dependencies = [
   "openai>=1.68.2",
-  "mcp[cli]>=1.22.0",
+  "mcp[cli]==1.22.0",
   "fastauth-api>=0.0.5",
   "mcp-oauth>=0.0.6",
   "fastapi",
