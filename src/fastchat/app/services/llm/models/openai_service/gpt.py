@@ -233,12 +233,11 @@ class GPT(LLM):
         data: str | dict,
         extra_messages: list[dict[str, str]] = [],
     ) -> Generator[str, None]:
-        system_message: (
-            str
-        ) = system_prompts.chat_asistant() + system_prompts.language_prompt(
-            self.current_language
-        )
-        user_message = user_prompts.query_and_data(query=query, data=data)
+        system_message: str = system_prompts.chat_asistant(
+            data=data
+        ) + system_prompts.language_prompt(self.current_language)
+        user_message = query
+        # user_message = user_prompts.query_and_data(query=query, data=data)
 
         stream = self.__call_stream_completion(
             system_message=system_message,

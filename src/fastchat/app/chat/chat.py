@@ -25,7 +25,7 @@ class Fastchat:
         history (list): Initial chat history. Defaults to an empty list.
         id (str | None): Optional identifier for the chat session.
         user_id (str): Optional identifier for the chat session.
-    
+
     ## Methods
         __call__(query: str) -> Generator[Step]:
             Processes a user query through multiple steps, including query analysis,
@@ -75,7 +75,9 @@ class Fastchat:
             model=model,
             chat_history=history + loaded_history,
         )
-        self.client_manager_mcp: ClientManagerMCP | None = None  # MCP client manager for handling server connections
+        self.client_manager_mcp: ClientManagerMCP | None = (
+            None  # MCP client manager for handling server connections
+        )
         self.extra_reponse_system_prompts: list[dict[str, str]] = [
             {
                 "role": "system",
@@ -97,11 +99,11 @@ class Fastchat:
     async def close(self) -> None:
         """
         Properly cleanup and close the Fastchat instance.
-        
+
         This method ensures all active connections and resources are properly closed
-        to prevent memory leaks and hanging connections. It should be called when 
+        to prevent memory leaks and hanging connections. It should be called when
         the chat session is no longer needed.
-        
+
         Changes made for cleanup implementation:
         - Added proper MCP client manager cleanup
         - Clear all reference collections to help garbage collection
@@ -114,9 +116,9 @@ class Fastchat:
             self.client_manager_mcp = None  # Prevent further usage
 
         # Close LLM client (if tiene método close)
-        if hasattr(self.llm, 'close') and callable(getattr(self.llm, 'close')):
+        if hasattr(self.llm, "close") and callable(getattr(self.llm, "close")):
             await self.llm.close()
-        
+
         # Clear references to help garbage collection
         # These collections might hold references to large objects
         self.current_messages_set = None
@@ -127,11 +129,11 @@ class Fastchat:
     async def __aenter__(self):
         """
         Context manager entry point.
-        
+
         This method is part of the async context manager protocol implementation.
-        It automatically initializes the Fastchat instance when entering a 
+        It automatically initializes the Fastchat instance when entering a
         'async with' block, ensuring proper setup.
-        
+
         Returns:
             self: The initialized Fastchat instance
         """
@@ -141,19 +143,18 @@ class Fastchat:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """
         Context manager exit point.
-        
+
         This method is part of the async context manager protocol implementation.
         It automatically calls close() when exiting an 'async with' block,
         ensuring proper cleanup even if an exception occurs.
-        
+
         Args:
             exc_type: Exception type (if any)
-            exc_val: Exception value (if any) 
+            exc_val: Exception value (if any)
             exc_tb: Exception traceback (if any)
         """
         await self.close()
 
-    
     async def initialize(self, print_logo: bool = True) -> None:
         await self.__set_client_manager_mcp(print_logo=print_logo)
 
@@ -190,8 +191,15 @@ class Fastchat:
 
         yield DataStep(data={"querys": querys})
 
-        for query in querys:
-            async for step in self.proccess_query(query):
+        for _query in querys:
+            async for step in self.proccess_query(
+                query=_query,
+                # user_query=(
+                #     query
+                #     if _query == querys[-1]
+                #     else None  # Pass full query for final response
+                # ),
+            ):
                 yield step
 
         # Save To Database Here
@@ -206,7 +214,11 @@ class Fastchat:
 
         # self.current_messages_set = None
 
-    async def proccess_query(self, query: str) -> AsyncGenerator[Step]:
+    async def proccess_query(
+        self,
+        query: str,
+        user_query: str | None = None,
+    ) -> AsyncGenerator[Step]:
         """
         Handles the detailed processing of a single query.
         This method updates the chat history, selects prompts and services based on the query,
@@ -301,7 +313,7 @@ class Fastchat:
             data = data[0].text
             first_chunk = True
             for chunk in self.llm.final_response(
-                query,
+                (query if not user_query else user_query),
                 data,
                 extra_messages=self.extra_reponse_system_prompts,
             ):

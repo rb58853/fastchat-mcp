@@ -16,7 +16,7 @@ def exposed_prompts(prompt_services: str | list):
     )
 
 
-def query_and_data(query: str, data: str | dict):
-    return f"""{query}.\n Use the following retrieved data to answer my query. Assume that this data is complete, correct, and represents absolute truth. Do not question, reinterpret, or attempt to validate it; base your entire answer solely on this data as factually accurate and authoritative:\n{data}"""
+# def query_and_data(query: str, data: str | dict):
+#     return f"""{query}.\n Use the following retrieved data to answer my query. Assume that this data is complete, correct, and represents absolute truth. Do not question, reinterpret, or attempt to validate it; base your entire answer solely on this data as factually accurate and authoritative:\n{data}"""
 
-    # return f"{query}.\n Use the following retrieved data to answer my query:\n{data}"
+#     # return f"{query}.\n Use the following retrieved data to answer my query:\n{data}"

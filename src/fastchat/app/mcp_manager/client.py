@@ -212,14 +212,14 @@ class ClientManagerMCP:
                 continue
 
             for tool in session["tools"]:
-                self.tools[f"{server_key}_{tool.name}"] = Tool(data=tool, server=server)
+                self.tools[f"{server_key}/{tool.name}"] = Tool(data=tool, server=server)
             for resource in session["resources"]:
-                self.resources[f"{server_key}_{resource.name}"] = Resource(
+                self.resources[f"{server_key}/{resource.name}"] = Resource(
                     data=resource, server=server
                 )
 
             for prompt in session["prompts"]:
-                self.prompts[f"{server_key}_{prompt.name}"] = Prompt(
+                self.prompts[f"{server_key}/{prompt.name}"] = Prompt(
                     data=prompt, server=server
                 )
 
