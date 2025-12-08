@@ -13,6 +13,7 @@ class Service(ABC):
         )
         self.data = data
         self.name: str = data.name
+        self.full_name: str = f"{server['key']}: {data.name}"
         self.description: str = data.description
         self.args: dict[str, any] = None
         self.server: dict = server

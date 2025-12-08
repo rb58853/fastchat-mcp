@@ -297,8 +297,6 @@ class Fastchat:
             yield ResponseStep(response="\n\n", data=None)
 
         else:
-            yield DataStep(data={"service": service})
-            yield DataStep(data={"args": args})
             service = (
                 client_manager_mcp.resources[service]
                 if (client_manager_mcp.service_type(service) == "resource")
@@ -308,6 +306,8 @@ class Fastchat:
                     else None
                 )
             )
+            yield DataStep(data={"service": service.full_name})
+            yield DataStep(data={"args": args})
 
             data = await service(args)
             data = data[0].text
