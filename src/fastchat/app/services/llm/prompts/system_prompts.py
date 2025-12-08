@@ -12,9 +12,11 @@ with open(yaml_file) as f:
 # ) as f:
 #     system_prompts: dict = yaml.safe_load(f)
 
-select_service: str = system_prompts.get("select_service", "")
 select_prompts: str = system_prompts.get("select_prompts", "")
 
+def select_service(services: str | list):
+    _select_service: str = system_prompts.get("select_service", "")
+    return f"{_select_service} {services}"
 
 def language_prompt(language: str) -> str:
     return f"\nAlways respond in the language: {language}"

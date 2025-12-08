@@ -58,7 +58,11 @@ class LLM(ABC):
         self.client_manager_mcp: ClientManagerMCP = client_manager_mcp
 
     @abstractmethod
-    def preprocess_query(self, query: str) -> dict:
+    def preprocess_query(
+        self,
+        query: str,
+        extra_messages: list[dict[str, str]] = [],
+    ) -> dict:
         """
         Preprocesses the input query string to extract relevant information such as the language and the main query content.
         Args:
@@ -147,7 +151,7 @@ class LLM(ABC):
     async def close(self) -> None:
         """
         Cleanup method for releasing LLM-specific resources.
-        
+
         CLEANUP IMPLEMENTATION METHOD:
         This method should be implemented by each LLM subclass to properly
         clean up any resources specific to that LLM implementation such as:
@@ -156,7 +160,7 @@ class LLM(ABC):
         - Cached data structures
         - Thread pools or async tasks
         - Authentication tokens
-        
+
         Should be called when the LLM instance is no longer needed to prevent
         resource leaks and ensure proper cleanup.
         """

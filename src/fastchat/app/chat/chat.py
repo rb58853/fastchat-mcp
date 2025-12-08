@@ -10,6 +10,7 @@ from ..services.llm import LLM
 from ..mcp_manager.client import ClientManagerMCP
 from ..services.llm.models.openai_service.gpt import GPT
 from ...config.llm_config import ConfigGPT, ConfigLLM
+from ...config import logger
 
 
 class Fastchat:
@@ -183,7 +184,10 @@ class Fastchat:
         yield Step(step_type=StepMessage.ANALYZE_QUERY)
         self.current_messages_set = MessagesSet(query=query)
 
-        processed_query: dict = self.llm.preprocess_query(query=query)
+        processed_query: dict = self.llm.preprocess_query(
+            query=query,
+            extra_messages=self.extra_selection_system_prompts,
+        )
         querys: list[str] = processed_query["querys"]
         self.llm.current_language = processed_query["language"]
 
@@ -297,6 +301,7 @@ class Fastchat:
             yield ResponseStep(response="\n\n", data=None)
 
         else:
+            service_name: str = service
             service = (
                 client_manager_mcp.resources[service]
                 if (client_manager_mcp.service_type(service) == "resource")
@@ -306,20 +311,30 @@ class Fastchat:
                     else None
                 )
             )
-            yield DataStep(data={"service": service.full_name})
-            yield DataStep(data={"args": args})
+            if service:
+                yield DataStep(data={"service": service.full_name})
+                yield DataStep(data={"args": args})
 
-            data = await service(args)
-            data = data[0].text
-            first_chunk = True
-            for chunk in self.llm.final_response(
-                (query if not user_query else user_query),
-                data,
-                extra_messages=self.extra_reponse_system_prompts,
-            ):
-                yield ResponseStep(response=chunk, data=None, first_chunk=first_chunk)
-                first_chunk = False
-            yield ResponseStep(response="\n\n", data=data)
+                data = await service(args)
+                data = data[0].text
+                first_chunk = True
+                for chunk in self.llm.final_response(
+                    (query if not user_query else user_query),
+                    data,
+                    extra_messages=self.extra_reponse_system_prompts,
+                ):
+                    yield ResponseStep(
+                        response=chunk, data=None, first_chunk=first_chunk
+                    )
+                    first_chunk = False
+                yield ResponseStep(response="\n\n", data=data)
+            else:
+                logger.error(f"Not found service for `{service_name}`")
+                yield DataStep(
+                    data={
+                        "service": f"❌ Not found service for `{service_name}`. Try again"
+                    }
+                )
 
         # endregion ###################################################
 

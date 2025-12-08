@@ -113,6 +113,7 @@ class GPT(LLM):
         extra_messages: list[dict[str, str]] = [],
     ):
         """ """
+        
         self.chat_history[-1][0] = {"role": "user", "content": query}
         messages: list[dict[str, str]] = [{"role": "system", "content": system_message}]
 
@@ -144,19 +145,33 @@ class GPT(LLM):
         self.__get_price(completion.usage)
         return completion.choices[0].message.content
 
-    def preprocess_query(self, query: str) -> dict:
+    def preprocess_query(
+        self,
+        query: str,
+        extra_messages: list[dict[str, str]] = [],
+    ) -> dict:
         system_message: str = system_prompts.preproccess_query(
             services=self.client_manager_mcp.get_services()
         )
-        messages: list[dict[str, str]] = [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": query},
+        messages: list[dict[str, str]] = [{"role": "system", "content": system_message}]
+        for message in extra_messages:
+            if message["role"] == "system":
+                messages.append(message)
+        messages += [
+            message
+            for messages in self.chat_history[-self.max_len_history : -1]
+            for message in messages
         ]
+        for message in extra_messages:
+            if message["role"] == "user" or message["role"] == "assistant":
+                messages.append(message)
+        
+        messages.append({"role": "user", "content": query})
+
         completion = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
             response_format={"type": "json_object"},
-            # reasoning_effort="low",  # Fast >>> Reasoning
         )
         self.__get_price(completion.usage)
         response = completion.choices[0].message.content
@@ -187,12 +202,13 @@ class GPT(LLM):
         query: str,
         extra_messages: list[dict[str, str]] = [],
     ) -> str:
-        system_message: str = system_prompts.select_service
         services = self.client_manager_mcp.get_services()
         if services is None or len(services) == 0:
             return json.dumps({"service": "", "args": {}})
 
-        query: str = user_prompts.query_and_services(query=query, services=services)
+        system_message: str = system_prompts.select_service(services=services)
+
+        query: str = query
         return self.__call_completion(
             system_message=system_message,
             query=query,
