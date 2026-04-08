@@ -1,4 +1,4 @@
-openai
+litellm
 mcp[cli]
 mcp-oauth
 fastauth-api

@@ -2,6 +2,13 @@
 
 ## fastchat-mcp
 
+### v2.0.0 ⚡
+
+- ✨ Added support for using multiple LLM providers and model identifiers through LiteLLM routing.
+- 🚀 Updated default model to `groq/openai/gpt-oss-120b` for faster inference and improved response speed.
+- 🧠 Applied small chat-history flow improvements so data recovered in previous steps can be reused in following steps.
+- 🧹 Removed obsolete `llm_provider` parameter from API/chat configuration and related documentation.
+
 ### v1.2.5 🚀
 
 - 🚀 Improvement of the prompt engine in system prompts  

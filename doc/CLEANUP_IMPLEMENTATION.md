@@ -12,7 +12,7 @@ This document describes all the changes made to implement proper resource cleanu
 **`async def close(self) -> None:`**
 - **Purpose**: Properly cleanup and close the Fastchat instance
 - **What it does**:
-  - Closes LLM instance and its OpenAI client connections
+  - Closes LLM instance and its LiteLLM client references
   - Closes MCP client manager and all its connections
   - Clears all reference collections to help garbage collection
   - Sets client manager and LLM to None to prevent further usage
@@ -236,15 +236,14 @@ async with Fastchat() as chat1:
   - Ensures consistent cleanup interface across different LLM providers
   - Called by Fastchat.close() to properly release LLM resources
 
-### GPT Implementation (`src/fastchat/app/services/llm/models/openai_service/gpt.py`)
+### LiteLLMModel Implementation (`src/fastchat/app/services/llm/models/litellm_service/litellm_model.py`)
 
 #### New Method Added:
 
 **`async def close(self) -> None:`**
-- **Purpose**: Concrete implementation of LLM cleanup for OpenAI GPT
+- **Purpose**: Concrete implementation of LLM cleanup for the LiteLLM-based GPT service
 - **What it does**:
-  1. **Closes async OpenAI client**: Properly closes the async client connection
-  2. **Nullifies sync OpenAI client**: Clears reference to sync client
+  1. **Clears LiteLLM references**: Nullifies sync/async placeholders and auth config references
   3. **Clears chat history**: Frees memory used by conversation history
   4. **Clears client manager reference**: Removes reference to prevent circular dependencies
   5. **Error handling**: Logs any cleanup errors and re-raises exceptions
@@ -253,26 +252,25 @@ async with Fastchat() as chat1:
 ```python
 async def close(self) -> None:
     """
-    Closes and cleans up all GPT resources including OpenAI clients and chat history.
+  Closes and cleans up all GPT resources including LiteLLM references and chat history.
     
     This method performs the following cleanup operations:
-    - Closes the async OpenAI client if present
-    - Closes the sync OpenAI client if present  
+    - Clears LiteLLM client references
     - Clears the chat history to free memory
     - Nullifies client references to prevent memory leaks
     
     Called by the parent Fastchat cleanup process to ensure proper resource management.
     """
     try:
-        # Close async OpenAI client
-        if hasattr(self, 'async_client') and self.async_client is not None:
-            await self.async_client.close()
-            self.async_client = None
-
-        # Close sync OpenAI client
+        # Clear LiteLLM client references
         if hasattr(self, 'client') and self.client is not None:
-            # Sync client doesn't have async close method, so we just nullify
             self.client = None
+        if hasattr(self, 'async_client') and self.async_client is not None:
+            self.async_client = None
+        if hasattr(self, 'api_key'):
+            self.api_key = None
+        if hasattr(self, 'base_url'):
+            self.base_url = None
 
         # Clear chat history to free memory
         if hasattr(self, 'chat_history'):
@@ -283,7 +281,7 @@ async def close(self) -> None:
             self.client_manager_mcp = None
 
     except Exception as e:
-        logger.error(f"Error during GPT cleanup: {e}")
+        logger.error(f"Error during LiteLLMModel cleanup: {e}")
         raise
 ```
 
@@ -293,9 +291,8 @@ The cleanup process follows this hierarchical flow:
 
 ```
 Fastchat.close()
-    ├── LLM.close() (GPT implementation)
-    │   ├── Close async OpenAI client
-    │   ├── Close sync OpenAI client
+  ├── LLM.close() (LiteLLMModel implementation)
+    │   ├── Clear LiteLLM references
     │   ├── Clear chat history
     │   └── Clear client manager reference
     │

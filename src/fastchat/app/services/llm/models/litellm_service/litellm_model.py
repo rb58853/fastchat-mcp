@@ -2,16 +2,16 @@ from collections.abc import Generator
 
 from .....mcp_manager.client import ClientManagerMCP
 from ...prompts import system_prompts, user_prompts
-from ......config.llm_config import ConfigGPT
+from ......config.llm_config import ConfigModel
 from ......config.logger import logger
 from ...llm import LLM
-from openai import OpenAI, AsyncOpenAI
+from litellm import completion
 import json
 
 
-class GPT(LLM):
+class LiteLLMModel(LLM):
     """
-    ## GPT
+    ## LiteLLMModel
     ### Args:
     - `model`: modelo de gpt que a usar
     - `max_history_len`: largo maximo del historial que se para como input al modelo
@@ -19,19 +19,20 @@ class GPT(LLM):
 
     def __init__(
         self,
-        model=ConfigGPT.DEFAULT_MODEL_NAME,
+        model=ConfigModel.DEFAULT_MODEL_NAME,
         max_history_len: int = 10,
         chat_history: list = [],
     ):
         super().__init__()
-        self.client = OpenAI(api_key=ConfigGPT.OPENAI_API_KEY)
-        """Cliente secuencial de GPT"""
-        self.async_client = AsyncOpenAI(api_key=ConfigGPT.OPENAI_API_KEY)
-        """Cliente asincrono de GPT"""
+        self.client = completion
+        """Cliente secuencial de LiteLLM"""
+        self.async_client = None
+        """Referencia reservada para compatibilidad con limpieza asincrona"""
+        self.base_url: str | None = ConfigModel.LITELLM_BASE_URL
         self.max_len_history: int = max_history_len
         """Maxima cantidad de mensajes previos que se le pasan como input"""
         self.chat_history: list[list[dict[str, str]]] = chat_history
-        """Historial del chat asosiado a esta instancia de GPT, en forma lista de listas, por ejemplo 
+        """Historial del chat asociado a esta instancia del modelo, en forma lista de listas, por ejemplo 
         ```
         chat_history: str = [
             [
@@ -48,6 +49,17 @@ class GPT(LLM):
         self.model: str = model
         self.current_price: float = 0
 
+    def __completion(self, messages: list[dict[str, str]], **kwargs):
+        completion_args = {
+            "model": self.model,
+            "messages": messages,
+            "drop_params": True,
+            **kwargs,
+        }
+        if self.base_url:
+            completion_args["base_url"] = self.base_url
+        return self.client(**completion_args)
+
     def __get_price(self, usage) -> float:
         """
         ### Args
@@ -56,17 +68,25 @@ class GPT(LLM):
             - `price`: precio final del llamado a la api.
         """
         try:
-            input_tokens: int = usage.prompt_tokens
-            output_tokens: int = usage.completion_tokens
+            input_tokens: int = (
+                usage.get("prompt_tokens", 0)
+                if isinstance(usage, dict)
+                else getattr(usage, "prompt_tokens", 0)
+            )
+            output_tokens: int = (
+                usage.get("completion_tokens", 0)
+                if isinstance(usage, dict)
+                else getattr(usage, "completion_tokens", 0)
+            )
 
-            input_price: float = ConfigGPT.MODEL_PRICE[self.model]["input"]
-            output_price: float = ConfigGPT.MODEL_PRICE[self.model]["output"]
+            input_price: float = ConfigModel.MODEL_PRICE[self.model]["input"]
+            output_price: float = ConfigModel.MODEL_PRICE[self.model]["output"]
             price: float = input_tokens * input_price + output_tokens * output_price
 
-            # Aumenta el valod asociado al costo de uso de la API en esta instancia de GPT
+            # Aumenta el valor asociado al costo de uso de la API en esta instancia
             self.current_price += price
             return price
-        except Exception as e:
+        except Exception:
             logger.warning(f"Can't calculate usage price from: {self.model}")
             return 0.0
 
@@ -74,6 +94,27 @@ class GPT(LLM):
         """Agrega una historia vacia para crear el espacio"""
         self.chat_history.append([])
         self.chat_history[-1].append({})
+
+    def append_service_data_to_history(self, data: str, role: str = "system"):
+        """
+        Agrega datos recuperados de un servicio MCP al historial de chat.
+        Esto permite que las siguientes subtareas tengan acceso a los datos
+        recuperados en pasos anteriores.
+
+        Args:
+            data (str): Los datos recuperados del servicio
+            role (str): El rol del mensaje (default: "system" para datos contextuales)
+        """
+        if self.chat_history and len(self.chat_history[-1]) > 0:
+            # Si el último elemento está vacío, reemplazarlo con los datos
+            if not self.chat_history[-1][-1]:
+                self.chat_history[-1][-1] = {"role": role, "content": data}
+            else:
+                # Sino, agregarlo como un nuevo elemento
+                self.chat_history[-1].append({"role": role, "content": data})
+        else:
+            # Si no hay historial, crear uno
+            self.chat_history.append([{"role": role, "content": data}])
 
     def __call_stream_completion(
         self,
@@ -98,8 +139,7 @@ class GPT(LLM):
                 messages.append(message)
         messages.append(self.chat_history[-1][0])
 
-        stream = self.client.chat.completions.create(
-            model=self.model,
+        stream = self.__completion(
             messages=messages,
             stream=True,
         )
@@ -131,15 +171,13 @@ class GPT(LLM):
         messages.append(self.chat_history[-1][0])
 
         if json_format:
-            completion = self.client.chat.completions.create(
-                model=self.model,
+            completion = self.__completion(
                 messages=messages,
                 response_format={"type": "json_object"},
             )
         else:
 
-            completion = self.client.chat.completions.create(
-                model=self.model,
+            completion = self.__completion(
                 messages=messages,
             )
         self.__get_price(completion.usage)
@@ -168,8 +206,7 @@ class GPT(LLM):
         
         messages.append({"role": "user", "content": query})
 
-        completion = self.client.chat.completions.create(
-            model=self.model,
+        completion = self.__completion(
             messages=messages,
             response_format={"type": "json_object"},
         )
@@ -273,26 +310,25 @@ class GPT(LLM):
 
     async def close(self) -> None:
         """
-        Closes and cleans up all GPT resources including OpenAI clients and chat history.
+        Closes and cleans up all model resources including LiteLLM references and chat history.
 
         This method performs the following cleanup operations:
-        - Closes the async OpenAI client if present
-        - Closes the sync OpenAI client if present
+        - Clears LiteLLM client references
         - Clears the chat history to free memory
         - Nullifies client references to prevent memory leaks
 
         Called by the parent Fastchat cleanup process to ensure proper resource management.
         """
         try:
-            # Close async OpenAI client
-            if hasattr(self, "async_client") and self.async_client is not None:
-                await self.async_client.close()
-                self.async_client = None
-
-            # Close sync OpenAI client
+            # Clear LiteLLM client references
             if hasattr(self, "client") and self.client is not None:
-                # Sync client doesn't have async close method, so we just nullify
                 self.client = None
+            if hasattr(self, "async_client") and self.async_client is not None:
+                self.async_client = None
+            if hasattr(self, "api_key"):
+                self.api_key = None
+            if hasattr(self, "base_url"):
+                self.base_url = None
 
             # Clear chat history to free memory
             if hasattr(self, "chat_history"):
@@ -303,5 +339,5 @@ class GPT(LLM):
                 self.client_manager_mcp = None
 
         except Exception as e:
-            logger.error(f"Error during GPT cleanup: {e}")
+            logger.error(f"Error during LiteLLMModel cleanup: {e}")
             raise

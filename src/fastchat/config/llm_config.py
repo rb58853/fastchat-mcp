@@ -1,13 +1,11 @@
 import os
-from ..app.chat.features.llm_provider import LLMProvider
 
 
 class ConfigLLM:
-    DEFAULT_PROVIDER: LLMProvider = LLMProvider.OPENAI
     DEFAULT_HISTORY_LEN: int = 20
 
 
-class ConfigGPT:
+class ConfigModel:
     MODEL_PRICE = {
         "gpt-3.5-turbo": {
             "input": 0.5 / 1000000,
@@ -25,12 +23,21 @@ class ConfigGPT:
             "input": 0.05 / 1000000,
             "output": 0.40 / 1000000,
         },
+        "groq/openai/gpt-oss-120b": {
+            "input": 0.30 / 1000000,
+            "output": 0.30 / 1000000,
+        },
     }
     """Price by one tokens from each model"""
 
-    # DEFAULT_MODEL_NAME = "gpt-4o-mini"
-    DEFAULT_MODEL_NAME = "gpt-5-nano"
-    """GPT model that will be used"""
+    DEFAULT_MODEL_NAME = "groq/openai/gpt-oss-120b"
+    """Default model identifier that will be used"""
+
+    LITELLM_API_KEY = os.environ.get("LITELLM_API_KEY")
+    """Optional default API key for LiteLLM provider routing"""
+
+    LITELLM_BASE_URL = os.environ.get("LITELLM_BASE_URL")
+    """Optional default base URL for OpenAI-compatible providers"""
 
     OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-    """OpenAI Api Key"""
+    """Backward-compatible API key (also consumed by LiteLLM for OpenAI models)"""

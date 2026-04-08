@@ -4,8 +4,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from ..settings import FastappSettings
 from ...config.logger import logger
 from ...app.chat.chat import Fastchat
-from ...config.llm_config import ConfigGPT, ConfigLLM
-from ...app.chat.features.llm_provider import LLMProvider
+from ...config.llm_config import ConfigModel
 
 router = APIRouter(prefix="/chat", tags=["chating"])
 STREAM_END_MARKER: str = "--eof"
@@ -16,14 +15,12 @@ STREAM_END_MARKER: str = "--eof"
 async def access_websocket(
     websocket: WebSocket,
     chat_id: str = None,
-    model: str = ConfigGPT.DEFAULT_MODEL_NAME,
-    llm_provider: str = ConfigLLM.DEFAULT_PROVIDER.value,
+    model: str = ConfigModel.DEFAULT_MODEL_NAME,
 ):
     await websocket_chat(
         websocket=websocket,
         chat_id=chat_id,
         model=model,
-        llm_provider=llm_provider,
     )
 
 
@@ -32,22 +29,19 @@ async def access_websocket(
 async def master_websocket(
     websocket: WebSocket,
     chat_id: str = None,
-    model: str = ConfigGPT.DEFAULT_MODEL_NAME,
-    llm_provider: str = ConfigLLM.DEFAULT_PROVIDER.value,
+    model: str = ConfigModel.DEFAULT_MODEL_NAME,
 ):
     await websocket_chat(
         websocket=websocket,
         chat_id=chat_id,
         model=model,
-        llm_provider=llm_provider,
     )
 
 
 async def websocket_chat(
     websocket: WebSocket,
     chat_id: str = None,
-    model: str = ConfigGPT.DEFAULT_MODEL_NAME,
-    llm_provider: str = ConfigLLM.DEFAULT_PROVIDER.value,
+    model: str = ConfigModel.DEFAULT_MODEL_NAME,
 ):
     await websocket.accept()
     await websocket.send_json(
@@ -70,13 +64,11 @@ async def websocket_chat(
         except:
             aditional_servers = {}
 
-    llm_provider = LLMProvider(llm_provider)
     history: list = get_history(chat_id)
 
     chat = Fastchat(
         id=chat_id,
         model=model,
-        llm_provider=llm_provider,
         extra_reponse_system_prompts=FastappSettings.extra_reponse_system_prompts,
         extra_selection_system_prompts=FastappSettings.extra_selection_system_prompts,
         aditional_servers=aditional_servers,

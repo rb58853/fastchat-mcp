@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fastchat-mcp"
-version = "1.2.8"
+version = "2.0.0"
 authors = [{ name = "Raúl Beltrán Gómez", email = "rb58853@gmail.com" }]
 description = "Python client, based on fastmcp, for connecting to MCP servers through multiple protocols, specifically designed to work with integrated language models."
 readme = "README.md"
@@ -16,7 +16,7 @@ classifiers = [
 license = "MIT"
 license-files = ["LICENSE*"]
 dependencies = [
-  "openai>=1.68.2",
+  "litellm>=1.67.5",
   "mcp[cli]==1.22.0",
   "fastauth-api>=0.0.5",
   "mcp-oauth>=0.0.6",

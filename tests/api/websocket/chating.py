@@ -3,11 +3,10 @@
 Crear uri pasando cada uno de los parametros deseados por parametros:
 - chat_id: str
 - model: str
-- llm_provider: str
 - len_context: int
 
 ```python
-uri_ws = "ws://localhost:8000/chat/ws?chat_id=<your-chat-id>&model=<your_model-name>&llm_provider=<your-provider>&len_contex=<your-len-contex>"
+uri_ws = "ws://localhost:8000/chat/ws?chat_id=<your-chat-id>&model=<your_model-name>&len_contex=<your-len-contex>"
 ```
 
 > Para mas detalles ver documentacion de Fastchat en src/fastchat/app/chat/chat.py

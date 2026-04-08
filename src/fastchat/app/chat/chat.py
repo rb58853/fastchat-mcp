@@ -4,12 +4,11 @@ from typing import AsyncGenerator
 from mcp.types import PromptMessage
 from .message import MessagesSet
 from ..client_db.client_db import ClientDB
-from .features.llm_provider import LLMProvider
 from .features.step import Step, StepMessage, DataStep, ResponseStep, QueryStep
 from ..services.llm import LLM
 from ..mcp_manager.client import ClientManagerMCP
-from ..services.llm.models.openai_service.gpt import GPT
-from ...config.llm_config import ConfigGPT, ConfigLLM
+from ..services.llm.models.litellm_service.litellm_model import LiteLLMModel
+from ...config.llm_config import ConfigModel, ConfigLLM
 from ...config import logger
 
 
@@ -20,8 +19,7 @@ class Fastchat:
     and generating responses using a language model. It supports context management, prompt selection,
     service invocation, and streaming responses in a step-wise manner.
     Args:
-        llm_provider (LLMProvider): The provider of language model to use. Default is `LLMProvider.OPENAI`.
-        model (str): The model name to use for the LLM. Defaults to ConfigGPT.DEFAULT_MODEL_NAME.
+        model (str): The model name to use for the LLM. Defaults to ConfigModel.DEFAULT_MODEL_NAME.
         len_context (int): Maximum length of the conversation history to maintain. Defaults to 10.
         history (list): Initial chat history. Defaults to an empty list.
         id (str | None): Optional identifier for the chat session.
@@ -41,8 +39,7 @@ class Fastchat:
     def __init__(
         self,
         id: str | None = None,
-        model=ConfigGPT.DEFAULT_MODEL_NAME,
-        llm_provider: LLMProvider = ConfigLLM.DEFAULT_PROVIDER,
+        model=ConfigModel.DEFAULT_MODEL_NAME,
         extra_reponse_system_prompts: list[str] = [],
         extra_selection_system_prompts: list[str] = [],
         aditional_servers: dict = {},
@@ -54,8 +51,7 @@ class Fastchat:
         Initialize a Chat instance.
         Args:
             id (str | None, optional): Optional chat session identifier.
-            model (str, optional): The model name to use. Defaults to ConfigGPT.DEFAULT_MODEL_NAME.
-            llm_provider (LLMProvider, optional): The language model provider. Defaults to LLMProvider.OPENAI.
+            model (str, optional): The model name to use. Defaults to ConfigModel.DEFAULT_MODEL_NAME.
             extra_reponse_system_prompts (list[str]): Additional system prompts for responses. Defaults to an empty list.
             extra_selection_system_prompts (list[str]): Additional system prompts for MCP services selection. Defaults to an empty list.
             aditional_servers (dic, optional): dictionary of servers with the format: `{server_1:{...server config...}, "server_2":{...}}`
@@ -71,7 +67,7 @@ class Fastchat:
             self.clientdb.load_history(chat_id=self.id) if id is not None else []
         )
 
-        self.llm: LLM = GPT(
+        self.llm: LLM = LiteLLMModel(
             max_history_len=len_context,
             model=model,
             chat_history=history + loaded_history,
@@ -317,7 +313,15 @@ class Fastchat:
 
                 data = await service(args)
                 data = data[0].text
+                # Add service data to chat history for availability in subsequent subtasks
+                self.llm.append_service_data_to_history(
+                    data=f"**Datos del servicio '{service.full_name}':**\n{data}",
+                    role="system"
+                )
+
+                # Capture and yield response chunks while accumulating for history
                 first_chunk = True
+                response = ""
                 for chunk in self.llm.final_response(
                     (query if not user_query else user_query),
                     data,
@@ -326,8 +330,14 @@ class Fastchat:
                     yield ResponseStep(
                         response=chunk, data=None, first_chunk=first_chunk
                     )
+                    response += chunk if chunk else ""
                     first_chunk = False
+                
                 yield ResponseStep(response="\n\n", data=data)
+                
+                # Add assistant response to history for context in subsequent subtasks
+                if response:
+                    self.llm.chat_history[-1].append({"role": "assistant", "content": response})
             else:
                 logger.error(f"Not found service for `{service_name}`")
                 yield DataStep(

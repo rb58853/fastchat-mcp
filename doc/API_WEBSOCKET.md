@@ -23,7 +23,6 @@
 - Common query parameters:
   - `chat_id` — conversation id.
   - `model` — LLM model identifier.
-  - `llm_provider` — provider (e.g., `openai`).
   - `len_context` — desired context length (`chat_history`).
 
 ## Recommended headers
@@ -89,7 +88,7 @@ on_text_received(text):
 
 ## Configuration and environment
 
-- Useful variables: `OPENAI_API_KEY`, `MASTER_TOKEN`, `CRYPTOGRAPHY_KEY`.
+- Useful variables: `LITELLM_API_KEY`, `LITELLM_BASE_URL`, `OPENAI_API_KEY`, `MASTER_TOKEN`, `CRYPTOGRAPHY_KEY`.
 - Configuration defines auxiliary services and database connections; review the [fastauth-api](https://github.com/rb58853/fastauth-api) package for details.
 
 ## auth_middleware fill in config file

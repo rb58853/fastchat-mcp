@@ -1,4 +1,4 @@
-from ..config.llm_config import ConfigGPT, ConfigLLM
+from ..config.llm_config import ConfigLLM
 
 
 class FastappSettings:

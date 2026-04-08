@@ -1,7 +1,7 @@
 """config module"""
 
 from .auth_api import AuthApiConfig
-from .llm_config import ConfigLLM, ConfigGPT
+from .llm_config import ConfigLLM, ConfigModel
 from .logger import logger
 
-# all = ["ConfigLLM", "ConfigGPT", "AuthApiConfig", "logger"]
+# all = ["ConfigLLM", "ConfigModel", "AuthApiConfig", "logger"]

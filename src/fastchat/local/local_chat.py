@@ -2,7 +2,7 @@ import asyncio
 
 from ..app.chat.chat import Fastchat
 from ..utils.clear_console import clear_console
-from ..config.llm_config import ConfigGPT, ConfigLLM
+from ..config.llm_config import ConfigModel, ConfigLLM
 from ..config.logger import logger
 import os
 
@@ -10,7 +10,7 @@ import os
 class TerminalChat:
     def __init__(
         self,
-        model: str = ConfigGPT.DEFAULT_MODEL_NAME,
+        model: str = ConfigModel.DEFAULT_MODEL_NAME,
         extra_reponse_system_prompts: list[str] = [],
         extra_selection_system_prompts: list[str] = [],
         aditional_servers: dict = {},
@@ -20,7 +20,7 @@ class TerminalChat:
         """
         Initialize the class with model configuration and system prompts.
         Args:
-            model (str): The name of the model to use. Defaults to ConfigGPT.DEFAULT_MODEL_NAME.
+            model (str): The name of the model to use. Defaults to ConfigModel.DEFAULT_MODEL_NAME.
             extra_reponse_system_prompts (list[str]): Additional system prompts for responses. Defaults to an empty list.
             extra_selection_system_prompts (list[str]): Additional system prompts for MCP services selection. Defaults to an empty list.
             len_context (int): The maximum length of the context history. Defaults to ConfigLLM.DEFAULT_HISTORY_LEN.

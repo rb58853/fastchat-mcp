@@ -41,7 +41,7 @@ Python chat client, based on [`mcp[cli]`](https://github.com/modelcontextprotoco
 
 ## Overview
 
-This package provides a Python interface to connect to MCP servers in an easy, intuitive, and configurable way. It features a modular architecture that allows for the seamless addition of new transfer protocols and language models (LLM) providers. Currently, it supports the HTTPStream and Stdio transport protocols for any OpenAI language model, with the capability to expand to more options in the future.
+This package provides a Python interface to connect to MCP servers in an easy, intuitive, and configurable way. It features a modular architecture that allows for the seamless addition of new transfer protocols and language models (LLM) providers. Currently, it supports the HTTPStream and Stdio transport protocols and uses LiteLLM as the LLM gateway, enabling model usage across multiple providers.
 
 ## Installation
 
@@ -55,28 +55,64 @@ pip install fastchat-mcp
 
 ### LLM Providers
 
-The client currently supports the following language models:
+The client currently supports the following language model gateway:
 
 | Provider | Status | Technical Description |
 | ---      | ---    |---                    |
-| OpenAI   | Implemented |OpenAI is a leading provider of artificial intelligence-based language models that develop advanced technologies for automatic text processing and generation through models like GPT.|
+| LiteLLM   | Implemented |LiteLLM provides a unified interface for multiple LLM providers, allowing you to use models from OpenAI, Anthropic, Google, Azure, Bedrock, Groq, and others through a common API.|
 
->🚨 **CONFIGURATION NOTE** Currently, this project only work with `OpenAI` llm provider.
+>🚨 **CONFIGURATION NOTE** The runtime provider is `LiteLLM`, and model/provider selection is controlled by the `model` identifier and environment variables.
 
-**Default Provider (`OpenAI`):** OpenAI is a leading provider of artificial intelligence-based language models that develop advanced technologies for automatic text processing and generation through models like GPT.
+**Default Provider (`LiteLLM`):** LiteLLM acts as a unified adapter to route requests to many LLM vendors while preserving a consistent interface in Fastchat.
 
 ### LLM Models
 
-This project can use any valid OpenAI language model, providing flexibility to choose the model that best fits your specific needs. To explore all available models, their features, and how to use them, it is recommended to consult the official [OpenAI documentation](https://platform.openai.com/docs/models).
+This project can use any model supported by LiteLLM, providing flexibility to choose the model that best fits your specific needs. To explore providers and model naming conventions, consult the official [LiteLLM provider documentation](https://docs.litellm.ai/docs/providers).
 
 To select a model, you should create a chat instance like this:
 
 ```python
 from fastchat import Fastchat
-chat = Fastchat(model="my-openai-model-name", ...)
+chat = Fastchat(model="my-model-id", ...)
 ```
 
-**Default Model (`"gpt-5-nano"`):** GPT-5 Nano is the smallest and fastest version of the GPT-5 family, designed to deliver quick and accurate responses with ultra-low latency. It is optimized for simple tasks and processing large volumes of queries. Its focus is on speed and low cost, making it ideal for personal assistants, rapid translation, and lightweight applications, while maintaining basic reasoning capabilities and reliable text generation.
+#### Supported Model Examples
+
+The following table contains examples of model identifiers that can be passed to the core. Each model must be prefixed with its provider identifier:
+
+| Provider | Model Examples | Use Case |
+| --- | --- | --- |
+| **OpenAI** | `gpt-4o`, `gpt-4-turbo`, `gpt-5-nano` | General purpose, advanced reasoning |
+| **Anthropic** | `anthropic/claude-3-7-sonnet`, `anthropic/claude-3-opus` | Enterprise, complex reasoning |
+| **Google** | `gemini/gemini-2.5-pro`, `gemini/gemini-2-flash-preview`, `gemini/gemini-3-flash-preview` | Multimodal, versatile |
+| **Groq** | `groq/llama-3.1-8b-instant`, `groq/llama-3.1-70b-versatile`, `groq/meta-llama/llama-4-scout-17b-16e-instruct` | Fast inference, cost-effective |
+| **Mistral** | `mistral/mistral-large`, `mistral/mistral-tiny` | Efficient, multilingual |
+| **Meta (Llama)** | `ollama/llama2`, `ollama/mistral` | Self-hosted, local inference |
+| **Azure** | `azure/gpt-4-deployment`, `azure/<your-deployment-name>` | Enterprise, Azure integration |
+| **AWS Bedrock** | `bedrock/anthropic.claude-3-sonnet`, `bedrock/meta.llama2-13b` | AWS ecosystem |
+
+**Usage Examples:**
+
+```python
+from fastchat import Fastchat
+
+# OpenAI models (requires OPENAI_API_KEY)
+chat = Fastchat(model="gpt-4o", ...)
+
+# Groq models (requires GROQ_API_KEY)
+chat = Fastchat(model="groq/llama-3.1-70b-versatile", ...)
+
+# Google Gemini models (requires GEMINI_API_KEY)
+chat = Fastchat(model="gemini/gemini-2-flash-preview", ...)
+
+# Anthropic Claude models (requires ANTHROPIC_API_KEY)
+chat = Fastchat(model="anthropic/claude-3-7-sonnet", ...)
+
+# Mistral models (requires MISTRAL_API_KEY)
+chat = Fastchat(model="mistral/mistral-large", ...)
+```
+
+**Default Model (`"groq/openai/gpt-oss-120b"`):** The 120B open-source model is a powerful, cost-effective option that provides excellent performance and reasoning capabilities. Served through Groq's fast inference platform, it delivers low-latency responses ideal for production applications. This model combines the strength of a large parameter count with competitive pricing and speed, making it suitable for complex tasks, code generation, and detailed analysis while maintaining cost efficiency.
 
 ## Implemented Transfer Protocols
 
@@ -96,22 +132,94 @@ Protocols for communication with MCP servers:
 
 * **`.env` file**: The `.env` file contains the authentication credentials necessary for integration with external services. This file must be created in the project root directory with the following format:
 
+    #### Basic Configuration
+
     ```env
     # .env
-    
-    #CRIPTOGRAFY_KEY by token data storage (OAuth2)
-    CRIPTOGRAFY_KEY=<any-criptografy-key>
 
-    # OpenAI Authentication
-    OPENAI_API_KEY=<your-openai-key>
+    # Cryptography key for token data storage (OAuth2)
+    CRIPTOGRAFY_KEY=<any-cryptography-key>
     ```
+
+    #### LLM Provider API Keys
+
+    The following environment variables configure authentication with different LLM providers. Add only the keys for the providers you plan to use:
+
+    ```env
+    # OpenAI
+    OPENAI_API_KEY=<your-openai-api-key>
+
+    # Anthropic (Claude)
+    ANTHROPIC_API_KEY=<your-anthropic-api-key>
+
+    # Google (Gemini)
+    GEMINI_API_KEY=<your-google-api-key>
+
+    # Groq
+    GROQ_API_KEY=<your-groq-api-key>
+
+    # Mistral
+    MISTRAL_API_KEY=<your-mistral-api-key>
+
+    # Azure OpenAI
+    AZURE_API_KEY=<your-azure-api-key>
+    AZURE_API_BASE=<your-azure-endpoint>
+    AZURE_API_VERSION=<your-azure-api-version>
+
+    # AWS Bedrock (requires AWS credentials)
+    AWS_ACCESS_KEY_ID=<your-aws-access-key>
+    AWS_SECRET_ACCESS_KEY=<your-aws-secret-key>
+    AWS_REGION_NAME=<your-aws-region>
+
+    # Local/Ollama models (if using local inference)
+    OLLAMA_BASE_URL=http://localhost:11434
+    ```
+
+    #### LiteLLM Configuration (Optional)
+
+    ```env
+    # Set a default routing API key (optional)
+    LITELLM_API_KEY=<your-default-provider-key>
+
+    # Set a custom base URL (for OpenAI-compatible APIs)
+    LITELLM_BASE_URL=<optional-openai-compatible-base-url>
+    ```
+
+    #### How to Add API Keys
+
+    1. Create a `.env` file in the project root directory (same level as `fastchat.config.json`):
+       ```bash
+       touch .env
+       ```
+
+    2. Add the API key for your selected provider:
+       ```env
+       # Example: Using Groq
+       GROQ_API_KEY=gsk_your_actual_groq_api_key_here
+       
+       # Example: Using Google Gemini
+       GEMINI_API_KEY=your_actual_gemini_api_key_here
+       ```
+
+    3. The application will automatically load these credentials when initializing the chat:
+       ```python
+       from fastchat import Fastchat
+       
+       # This will use the GROQ_API_KEY from .env
+       chat = Fastchat(model="groq/llama-3.1-70b-versatile", ...)
+       ```
+
+    4. **⚠️ Security Note:** Never commit the `.env` file to version control. Add it to your `.gitignore`:
+       ```bash
+       echo ".env" >> .gitignore
+       ```
 
 * **`fastchat.config.json` file**: The `fastchat.config.json` file defines the configuration of available MCP servers. It must be created in the project root directory with this [structure](#file-fastchatconfigjson)
 
 ### Dependencies
 
 * `Python = ">=3.11"`
-* `openai = "^1.68.2"`
+* `litellm`
 * `mcp[cli]`
 * `mcp-oauth`
 
@@ -405,7 +513,7 @@ code .
 * 💬 Fully functional streaming chat by passing a query; see [`Fastchat`](./src/fastchat/services/llm/chat/chat.py).
 * ⚙️ Integration with `Tools`, `Resources`, and `Prompts` from MCP servers, achieving a well-integrated client workflow with each of these services. [Check flow](./doc/FLOW.md)
 * 🔐 Simple authentication system using [mcp-oauth](https://github.com/rb58853/mcp-oauth) and [this environmental configuration](#2-private-http-stream-server-with-authentication). Also integrate [headers authorization](#3-github-server-with-authentication-headers).
-* 👾 OpenAI GPT as an integrated LLM using any valid OpenAI language model.
+* 👾 LiteLLM as integrated LLM gateway using any supported model identifier.
 * 📡 Support for the httpstream transport protocol.
 * 📟 Support for the stdio transport protocol.
 * 💻 Easy console usage via [`TerminalChat().open()`](./src/fastchat/dev.py); see [example1](#usage-example) for the use case.
