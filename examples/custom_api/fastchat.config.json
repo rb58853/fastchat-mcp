@@ -1,6 +1,9 @@
 {
-    "app_name": "Example fastchat-mcp-empty",
+    "app_name": "Technova-Agent",
     "mcp_servers": {},
-    "db_conection": {},
-    "auth-middleware": {}
+    "auth_middleware": {
+        "database_api_path": "...",
+        "master-token": null,
+        "headers": {}
+    }
 }

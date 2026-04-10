@@ -31,13 +31,61 @@
 - `MASTER-TOKEN: <master-token>` (for `/chat/admin`)
 - `aditional_servers: <JSON-string>` — list of auxiliary services ([see example servers](../README.md#additional-mcp-servers)).
 
+## Browser-compatible additional servers
+
+Some browser clients cannot send custom headers in native WebSocket APIs. To support these clients, the API accepts additional servers in the first WebSocket message.
+
+Merge behavior:
+
+1. Parse `aditional_servers` from headers.
+2. Parse additional servers from the first message only when it matches the defined syntax.
+3. Merge both maps into one final object.
+4. If a server key exists in both sources, the first-message value overrides the header value.
+
+Fallback behavior:
+
+- If the first message is not an additional-servers payload, it is treated as a normal user query.
+- If no additional-servers payload is sent, the flow continues normally.
+- If payload parsing fails, it is ignored and the flow continues.
+
+Supported first-message syntax:
+
+1. Prefix-based payload:
+
+```text
+__fastchat_additional_servers__:{"my_server":{"protocol":"httpstream","httpstream-url":"http://127.0.0.1:9000/mcp","name":"my_server","description":"Server sent from browser"}}
+```
+
+1. JSON envelope payload:
+
+```json
+{
+  "type": "additional_servers",
+  "data": {
+    "my_server": {
+      "protocol": "httpstream",
+      "httpstream-url": "http://127.0.0.1:9000/mcp",
+      "name": "my_server",
+      "description": "Server sent from browser"
+    }
+  }
+}
+```
+
+Use cases:
+
+- Browser chat widget that cannot set `aditional_servers` header.
+- Dynamic tenant-specific server injection from frontend runtime.
+- Progressive override of static servers configured in headers.
+
 ## Message protocol (summary)
 
 1. On connect, the server sends a JSON confirmation message.
-2. The client sends the query as plain text over the socket.
-3. The server emits a sequence of JSON messages, each representing a "step" or chunk of the response.
-4. When finished, the server sends a literal terminator to indicate end of stream.
-5. If the client closes, the server should clean up resources and close gracefully.
+2. The client can optionally send one first message with additional servers payload.
+3. The client sends the query as plain text over the socket.
+4. The server emits a sequence of JSON messages, each representing a "step" or chunk of the response.
+5. When finished, the server sends a literal terminator to indicate end of stream.
+6. If the client closes, the server should clean up resources and close gracefully.
 
 ## Step structure (suggested)
 
@@ -65,6 +113,7 @@
 ```python
 open websocket to ws://host:port/chat/user with headers and query
 await initial_accept_message()
+send_text('{"type":"additional_servers","data":{...}}')  # optional
 send_text("My question here")
 for message in socket:
         if message == STREAM_END_MARKER: break

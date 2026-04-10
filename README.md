@@ -435,6 +435,46 @@ chat = Fastchat(additional_servers=my_servers)
 
 > API: The websocket exposed by the API supports additional servers passed through the `additional_servers` parameter.
 
+### Browser-compatible additional servers injection (WebSocket)
+
+Some browser WebSocket clients do not allow custom headers. For this scenario, the API now supports sending additional servers in the first WebSocket message.
+
+How it works:
+
+1. The API reads `aditional_servers` from headers (if available).
+2. Optionally, the API reads the first client message and checks whether it is an additional-servers payload.
+3. Final additional servers are the merge of both sources:
+    * header-provided servers
+    * first-message servers (overwrite repeated keys)
+4. If the first message is not an additional-servers payload, it is processed as the normal user query.
+
+Supported payload formats for the first message:
+
+```text
+__fastchat_additional_servers__:{"my_server":{"protocol":"httpstream","httpstream-url":"http://127.0.0.1:9000/mcp","name":"my_server","description":"My browser-injected server"}}
+```
+
+```json
+{
+    "type": "additional_servers",
+    "data": {
+        "my_server": {
+            "protocol": "httpstream",
+            "httpstream-url": "http://127.0.0.1:9000/mcp",
+            "name": "my_server",
+            "description": "My browser-injected server"
+        }
+    }
+}
+```
+
+Typical browser flow:
+
+1. Open WebSocket (`/chat/user` or `/chat/admin`) with URL query params.
+2. Optionally send the first message with one of the payload formats above.
+3. Send the user query as plain text.
+4. Read streamed JSON steps until `--eof`.
+
 ## API & WebSocket Integration
 
 Fastchat MCP provides an API extension with support for WebSocket connections secured via JWT token-based authentication. It offers two primary real-time messaging endpoints: one for users authenticated by an `ACCESS TOKEN`, and another for administrators requiring a `MASTER TOKEN`.

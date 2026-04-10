@@ -41,4 +41,7 @@ def chat_asistant(
 
 
 def preproccess_query(services: list) -> str:
-    return f'{system_prompts["task_query_decomposer"]}"\n"{services})'
+    return (
+        f"{system_prompts['task_query_decomposer']}\n"
+        f"{services}"
+    )

@@ -12,6 +12,17 @@ uri_ws = "ws://localhost:8000/chat/ws?chat_id=<your-chat-id>&model=<your_model-n
 > Para mas detalles ver documentacion de Fastchat en src/fastchat/app/chat/chat.py
 
 __En caso de no pasar uno de estos valores, entonces se usara el valor por defecto__
+
+### Additional servers from first websocket message (browser-compatible)
+
+Some websocket clients (especially browsers) cannot send custom headers. In that case,
+you can inject additional servers in the first websocket message using one of these syntaxes:
+
+1) Prefix syntax:
+`__fastchat_additional_servers__:{"my_server": {...}}`
+
+2) JSON envelope:
+`{"type":"additional_servers","data":{"my_server": {...}}}`
 """
 
 import asyncio
@@ -48,6 +59,13 @@ class WebsocketClient:
             connection = json.loads(connection)
             accepted: bool = connection["status"] == "success"
             print(("✅" if accepted else "❌") + f" {connection['detail']}\n")
+
+            # Optional: inject additional servers through first websocket message.
+            # Useful for clients that cannot send custom websocket headers.
+            # websocket.send('{"type":"additional_servers","data":{...}}')
+            # await websocket.send(
+            #     '__fastchat_additional_servers__:{"browser_server":{"protocol":"httpstream","httpstream-url":"http://127.0.0.1:9000/mcp","name":"browser_server","description":"Injected from first message"}}'
+            # )
 
             while accepted:
                 mensaje = input(">> ")  # Leer mensaje a enviar desde consola

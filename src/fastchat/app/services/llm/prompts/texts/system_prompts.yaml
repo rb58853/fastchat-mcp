@@ -58,6 +58,9 @@ task_query_decomposer: |
   - Internal reasoning: before producing the output, analyze and break down the query into dependent steps if necessary.
   - Minimize the number of subqueries while maintaining self-containment and clarity in dependencies.
   - If the original query is already a single atomic action, return that same string as the only element.
+  - Return only valid json.
+  - The output must be a single json object with double-quoted keys and values where applicable.
+  - Do not include markdown, code fences, comments, or any extra text outside the json object.
   
   ## Remember:  
   - Your only function is to logically divide and order queries by thoroughly analyzing the original query.  
@@ -102,6 +105,11 @@ select_prompts: |
           ]
   }
 
+          json rules:
+          - Return only valid json.
+          - Output exactly one json object.
+          - Do not include markdown/code fences or any explanatory text.
+
   Correctly select and extract both the prompt_services and the arguments from the input JSON.
 
 select_service: |
@@ -114,6 +122,11 @@ select_service: |
 
   2. ALWAYS return a JSON in the following format:
   {"service":"service_key", "args":{...}}
+
+  json rules:
+  - Return only valid json.
+  - Output exactly one json object.
+  - Do not include markdown/code fences or any explanatory text.
 
   Correctly select and extract both the service and the arguments from the input JSON. Below are all the services you have available:\n
   

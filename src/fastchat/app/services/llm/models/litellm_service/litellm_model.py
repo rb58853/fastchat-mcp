@@ -60,6 +60,17 @@ class LiteLLMModel(LLM):
             completion_args["base_url"] = self.base_url
         return self.client(**completion_args)
 
+    @staticmethod
+    def __strict_json_system_message() -> dict[str, str]:
+        return {
+            "role": "system",
+            "content": (
+                "Return only valid json. "
+                "Output exactly one json object, with double-quoted keys and string values when applicable. "
+                "Do not output markdown, code fences, comments, or any text outside json."
+            ),
+        }
+
     def __get_price(self, usage) -> float:
         """
         ### Args
@@ -171,6 +182,7 @@ class LiteLLMModel(LLM):
         messages.append(self.chat_history[-1][0])
 
         if json_format:
+            messages.append(self.__strict_json_system_message())
             completion = self.__completion(
                 messages=messages,
                 response_format={"type": "json_object"},
@@ -205,6 +217,7 @@ class LiteLLMModel(LLM):
                 messages.append(message)
         
         messages.append({"role": "user", "content": query})
+        messages.append(self.__strict_json_system_message())
 
         completion = self.__completion(
             messages=messages,

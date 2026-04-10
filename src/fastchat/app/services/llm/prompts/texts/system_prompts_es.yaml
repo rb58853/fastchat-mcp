@@ -65,6 +65,9 @@ task_query_decomposer: |
   - Razonamiento interno: antes de emitir la salida, analiza y descompón la consulta en pasos dependientes en caso de ser necesario.
   - Minimiza el número de subconsultas manteniendo autocontención y claridad en las dependencias.
   - Si la consulta original ya es una única acción atómica, devuelve esa misma cadena como único elemento.
+  - Devuelve solo json valido.
+  - La salida debe ser un unico objeto json con claves y valores de texto entre comillas dobles cuando corresponda.
+  - No incluyas markdown, bloques de codigo ni texto fuera del json.
   
   ## Recuerda:  
   - Tu única función es dividir y ordenar las consultas logicamente haciendo un analisis exhaustivo de la consulta original.  
