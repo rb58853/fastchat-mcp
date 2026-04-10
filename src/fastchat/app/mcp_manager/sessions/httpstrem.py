@@ -62,6 +62,23 @@ async def async_get_session(
             }
         return data
 
+
+async def close_session(server: dict) -> None:
+    """
+    Compatibility close hook for HTTP stream sessions.
+
+    Current HTTP sessions are created within context managers inside
+    `async_get_session`, so they are already closed before returning.
+    This function exists to satisfy ClientManagerMCP cleanup calls
+    and prevent false connection-error logs during shutdown.
+    """
+    return None
+
+
+async def close_all_sessions() -> None:
+    """Compatibility hook for bulk HTTP session cleanup."""
+    return None
+
 # from mcp.client.streamable_http import streamablehttp_client
 # from mcp.client.auth import OAuthClientProvider
 # from mcp import ClientSession
